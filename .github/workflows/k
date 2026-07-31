@@ -1,1 +1,92 @@
 
+import os
+
+output_dir = '/mnt/agents/output/'
+
+# ============================================
+# FILE 1: vulnerable_app.py (Sengaja ada bug)
+# ============================================
+vulnerable_code = '''"""
+============================================================
+Vulnerable Application - Demo DevSecOps
+============================================================
+File ini SENGAJA dibuat VULNERABLE untuk keperluan demo
+security scanning dalam pipeline CI/CD.
+
+JANGAN digunakan di production!
+"""
+
+import hashlib
+import os
+import sqlite3
+
+# [VULNERABILITY 1] Hardcoded Secret / Password
+# CWE-798: Use of Hard-coded Credentials
+DB_PASSWORD = "SuperSecret123!"
+API_KEY = "sk-live-abc123xyz789"
+JWT_SECRET = "my_jwt_secret_key_2024"
+
+# [VULNERABILITY 2] SQL Injection
+# CWE-89: Improper Neutralization of Special Elements in SQL Command
+def get_user_by_id(user_id):
+    conn = sqlite3.connect('app.db')
+    cursor = conn.cursor()
+    # DANGER: User input langsung dimasukkan ke query tanpa sanitasi!
+    query = f"SELECT * FROM users WHERE id = {user_id}"
+    cursor.execute(query)
+    result = cursor.fetchall()
+    conn.close()
+    return result
+
+# [VULNERABILITY 3] Command Injection
+# CWE-78: Improper Neutralization of OS Command
+import subprocess
+
+def ping_host(hostname):
+    # DANGER: User input bisa inject command!
+    cmd = f"ping -c 4 {hostname}"
+    result = subprocess.call(cmd, shell=True)
+    return result
+
+# [VULNERABILITY 4] Insecure Hashing (MD5)
+# CWE-916: Use of Password Hash With Insufficient Computational Effort
+def hash_password(password):
+    # DANGER: MD5 sudah tidak aman untuk password hashing
+    return hashlib.md5(password.encode()).hexdigest()
+
+# [VULNERABILITY 5] Path Traversal
+# CWE-22: Improper Limitation of a Pathname to a Restricted Directory
+def read_user_file(filename):
+    base_path = "/var/app/data/"
+    # DANGER: Tidak ada validasi path, user bisa akses file sembarang
+    file_path = base_path + filename
+    with open(file_path, 'r') as f:
+        return f.read()
+
+# [VULNERABILITY 6] Debug Mode On / Informasi Sensitif
+def debug_info():
+    # DANGER: Menampilkan informasi internal yang seharusnya rahasia
+    return {
+        "db_host": "localhost:5432",
+        "db_user": "admin",
+        "db_pass": DB_PASSWORD,
+        "api_key": API_KEY,
+        "env": "production"
+    }
+
+# [VULNERABILITY 7] Eval - Code Injection
+# CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code
+def calculate(expression):
+    # DANGER: eval() bisa mengeksekusi kode arbitrary
+    return eval(expression)
+
+if __name__ == "__main__":
+    print("[!] Aplikasi vulnerable berjalan...")
+    print("[!] JANGAN gunakan di production!")
+'''
+
+with open(os.path.join(output_dir, 'vulnerable_app.py'), 'w', encoding='utf-8') as f:
+    f.write(vulnerable_code)
+
+print("✅ vulnerable_app.py dibuat!")
+
